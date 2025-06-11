@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Control de Asistencia - Maquila</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Agregar favicon para evitar error 404 -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
@@ -19,11 +18,11 @@
     <div class="space-y-4">
       <div>
         <label for="username" class="block text-sm sm:text-base font-medium text-gray-700">Usuario</label>
-        <input type="text" id="username" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Ej. juan.perez" required>
+        <input type="text" id="username" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Ej. admin" required>
       </div>
       <div>
         <label for="password" class="block text-sm sm:text-base font-medium text-gray-700">Contraseña</label>
-        <input type="password" id="password" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+        <input type="password" id="password" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Ej. admin123" required>
       </div>
       <button onclick="login()" class="w-full bg-blue-500 text-white p-2 sm:p-3 rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
         <span id="loginButtonText">Iniciar Sesión</span>
@@ -105,8 +104,10 @@
             <thead class="text-xs text-gray-700 uppercase bg-gray-50">
               <tr>
                 <th class="px-4 py-2 border-b">ID Empleado</th>
-                <th class="px-4 py-2 border-b">Horas Trabajadas</th>
-                <th class="px-4 py-2 border-b">Proyectos</th>
+                <th class="px-4 py-2 border-b">Fecha</th>
+                <th class="px-4 py-2 border-b">Hora</th>
+                <th class="px-4 py-2 border-b">Acción</th>
+                <th class="px-4 py-2 border-b">Proyecto</th>
               </tr>
             </thead>
             <tbody id="reportTable"></tbody>
@@ -125,22 +126,19 @@
     let isAdmin = false;
     let currentReportData = [];
     
-    // URL corregida del script de Google Apps Script
+    // REEMPLAZA CON TU URL REAL DE GOOGLE APPS SCRIPT
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSMrvEP1XzBdPHGbfUYLKUOLa8lSg-mEvTchMO9qxMN8q_fCiXOKzCxHNnQ30s5VLb/exec';
 
     function showTab(tab) {
-      // Ocultar todas las pestañas
       document.getElementById('registerTab').classList.add('hidden');
       document.getElementById('reportTab').classList.add('hidden');
-      
-      // Mostrar la pestaña seleccionada
       document.getElementById(tab + 'Tab').classList.remove('hidden');
       
       // Actualizar estilos de botones
       document.getElementById('registerTabBtn').classList.remove('bg-blue-500', 'text-white');
       document.getElementById('registerTabBtn').classList.add('bg-gray-300', 'text-gray-700');
       
-      if (document.getElementById('reportTabButton').classList.contains('hidden') === false) {
+      if (!document.getElementById('reportTabButton').classList.contains('hidden')) {
         document.getElementById('reportTabButton').classList.remove('bg-blue-500', 'text-white');
         document.getElementById('reportTabButton').classList.add('bg-gray-300', 'text-gray-700');
       }
@@ -158,7 +156,7 @@
       document.getElementById('reportResult').classList.add('hidden');
     }
 
-    function showSpinner(spinnerId, textId, originalText) {
+    function showSpinner(spinnerId, textId) {
       document.getElementById(spinnerId).classList.remove('hidden');
       document.getElementById(textId).textContent = 'Procesando...';
     }
@@ -170,9 +168,20 @@
 
     async function makeRequest(data) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 segundos timeout
+      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 segundos timeout
 
       try {
+        // Primero hacemos una solicitud OPTIONS para verificar CORS
+        await fetch(SCRIPT_URL, {
+          method: 'OPTIONS',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal
+        });
+
+        // Luego hacemos la solicitud POST
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
           mode: 'cors',
@@ -186,16 +195,21 @@
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
 
-        const result = await response.json();
-        return result;
+        return await response.json();
       } catch (error) {
         clearTimeout(timeoutId);
         
         if (error.name === 'AbortError') {
           throw new Error('La solicitud tardó demasiado tiempo. Intente nuevamente.');
+        }
+        
+        // Manejar específicamente errores de CORS
+        if (error.message.includes('Failed to fetch') || error.message.includes('CORS')) {
+          throw new Error('Error de conexión con el servidor. Verifica tu conexión a internet o contacta al administrador.');
         }
         
         throw error;
@@ -213,7 +227,7 @@
         return;
       }
 
-      showSpinner('loginSpinner', 'loginButtonText', 'Iniciar Sesión');
+      showSpinner('loginSpinner', 'loginButtonText');
       loginMessage.textContent = '';
       loginMessage.className = 'mt-4 text-center text-sm sm:text-base text-gray-600';
 
@@ -235,8 +249,6 @@
           }
           
           showTab('register');
-          
-          // Limpiar campos de login
           document.getElementById('username').value = '';
           document.getElementById('password').value = '';
         } else {
@@ -245,7 +257,7 @@
         }
       } catch (error) {
         console.error('Error en login:', error);
-        loginMessage.textContent = `Error de conexión: ${error.message}`;
+        loginMessage.textContent = `Error: ${error.message}`;
         loginMessage.className = 'mt-4 text-center text-sm sm:text-base text-red-500';
       } finally {
         hideSpinner('loginSpinner', 'loginButtonText', 'Iniciar Sesión');
@@ -264,24 +276,21 @@
         return;
       }
 
-      showSpinner('registerSpinner', 'registerButtonText', 'Registrar');
+      showSpinner('registerSpinner', 'registerButtonText');
       message.textContent = '';
       message.className = 'mt-4 text-center text-sm sm:text-base text-gray-600';
 
       try {
         const result = await makeRequest({
-          action: 'register',
+          action: 'registerAttendance',
           employeeId: employeeId,
           actionType: action,
-          project: project,
-          timestamp: new Date().toISOString()
+          project: project
         });
 
         if (result.status === 'success') {
-          message.textContent = result.message || 'Registro guardado correctamente.';
+          message.textContent = 'Registro guardado correctamente.';
           message.className = 'mt-4 text-center text-sm sm:text-base text-green-600';
-          
-          // Limpiar campo de empleado
           document.getElementById('employeeId').value = '';
         } else {
           message.textContent = result.message || 'Error al registrar.';
@@ -289,7 +298,7 @@
         }
       } catch (error) {
         console.error('Error en registro:', error);
-        message.textContent = `Error de conexión: ${error.message}`;
+        message.textContent = `Error: ${error.message}`;
         message.className = 'mt-4 text-center text-sm sm:text-base text-red-500';
       } finally {
         hideSpinner('registerSpinner', 'registerButtonText', 'Registrar');
@@ -310,7 +319,7 @@
         return;
       }
 
-      showSpinner('reportSpinner', 'reportButtonText', 'Generar Reporte');
+      showSpinner('reportSpinner', 'reportButtonText');
       message.textContent = '';
       message.className = 'mt-4 text-center text-sm sm:text-base text-gray-600';
 
@@ -339,8 +348,10 @@
               tr.className = 'border-b hover:bg-gray-50';
               tr.innerHTML = `
                 <td class="px-4 py-2">${row.employeeId}</td>
-                <td class="px-4 py-2">${row.hoursWorked.toFixed(2)}</td>
-                <td class="px-4 py-2">${row.projects.join(', ')}</td>
+                <td class="px-4 py-2">${row.date}</td>
+                <td class="px-4 py-2">${row.time}</td>
+                <td class="px-4 py-2">${row.action}</td>
+                <td class="px-4 py-2">${row.project}</td>
               `;
               reportTable.appendChild(tr);
 
@@ -349,8 +360,10 @@
               card.className = 'p-4 bg-gray-50 rounded-md border';
               card.innerHTML = `
                 <p class="font-semibold">ID: ${row.employeeId}</p>
-                <p class="text-gray-600">Horas: ${row.hoursWorked.toFixed(2)}</p>
-                <p class="text-gray-600">Proyectos: ${row.projects.join(', ')}</p>
+                <p class="text-gray-600">Fecha: ${row.date}</p>
+                <p class="text-gray-600">Hora: ${row.time}</p>
+                <p class="text-gray-600">Acción: ${row.action}</p>
+                <p class="text-gray-600">Proyecto: ${row.project}</p>
               `;
               reportCards.appendChild(card);
             });
@@ -365,7 +378,7 @@
         }
       } catch (error) {
         console.error('Error en reporte:', error);
-        message.textContent = `Error de conexión: ${error.message}`;
+        message.textContent = `Error: ${error.message}`;
         message.className = 'mt-4 text-center text-sm sm:text-base text-red-500';
       } finally {
         hideSpinner('reportSpinner', 'reportButtonText', 'Generar Reporte');
@@ -382,11 +395,13 @@
 
       try {
         const csvContent = [
-          ['ID Empleado', 'Horas Trabajadas', 'Proyectos'],
+          ['ID Empleado', 'Fecha', 'Hora', 'Acción', 'Proyecto'],
           ...currentReportData.map(row => [
             row.employeeId,
-            row.hoursWorked.toFixed(2),
-            row.projects.join(';')
+            row.date,
+            row.time,
+            row.action,
+            row.project
           ])
         ].map(row => row.join(',')).join('\n');
 
@@ -429,16 +444,12 @@
 
     // Permitir login con Enter
     document.getElementById('password').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        login();
-      }
+      if (e.key === 'Enter') login();
     });
 
     // Permitir registro con Enter
     document.getElementById('employeeId').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        registerAttendance();
-      }
+      if (e.key === 'Enter') registerAttendance();
     });
   </script>
 </body>
