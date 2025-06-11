@@ -5,40 +5,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Control de Asistencia - Maquila</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Agregar favicon para evitar error 404 -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
   <div id="loginSection" class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-    <img src="logo.jpg" alt="Logo Empresa" class="mx-auto mb-6 w-32 sm:w-40" loading="lazy">
-    <h1 class="text-2xl font-bold mb-6 text-center">Control de Asistencia</h1>
+    <div class="mx-auto mb-6 w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center">
+      <svg class="w-16 h-16 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+      </svg>
+    </div>
+    <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Control de Asistencia</h1>
     <div class="space-y-4">
       <div>
         <label for="username" class="block text-sm sm:text-base font-medium text-gray-700">Usuario</label>
-        <input type="text" id="username" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md" placeholder="Ej. juan.perez" required>
+        <input type="text" id="username" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Ej. juan.perez" required>
       </div>
       <div>
         <label for="password" class="block text-sm sm:text-base font-medium text-gray-700">Contraseña</label>
-        <input type="password" id="password" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md" required>
+        <input type="password" id="password" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
       </div>
-      <button onclick="login()" class="w-full bg-blue-500 text-white p-2 sm:p-3 rounded-md hover:bg-blue-600">Iniciar Sesión</button>
+      <button onclick="login()" class="w-full bg-blue-500 text-white p-2 sm:p-3 rounded-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
+        <span id="loginButtonText">Iniciar Sesión</span>
+        <div id="loginSpinner" class="hidden inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
+      </button>
     </div>
     <p id="loginMessage" class="mt-4 text-center text-sm sm:text-base text-gray-600"></p>
   </div>
 
   <div id="attendanceSection" class="hidden bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-    <img src="[YOUR_LOGO_URL]" alt="Logo Empresa" class="mx-auto mb-6 w-32 sm:w-40" loading="lazy">
-    <h1 class="text-2xl font-bold mb-6 text-center">Control de Asistencia</h1>
-    <div class="flex mb-4">
-      <button onclick="showTab('register')" class="flex-1 bg-blue-500 text-white p-2 sm:p-3 rounded-l-md hover:bg-blue-600">Registrar</button>
-      <button id="reportTabButton" onclick="showTab('report')" class="flex-1 bg-gray-300 text-gray-700 p-2 sm:p-3 rounded-r-md hover:bg-gray-400 hidden">Reportes</button>
+    <div class="mx-auto mb-6 w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center">
+      <svg class="w-16 h-16 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+      </svg>
     </div>
+    <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Control de Asistencia</h1>
+    <div class="flex mb-4">
+      <button id="registerTabBtn" onclick="showTab('register')" class="flex-1 bg-blue-500 text-white p-2 sm:p-3 rounded-l-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Registrar</button>
+      <button id="reportTabButton" onclick="showTab('report')" class="flex-1 bg-gray-300 text-gray-700 p-2 sm:p-3 rounded-r-md hover:bg-gray-400 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 hidden">Reportes</button>
+    </div>
+    
     <div id="registerTab" class="space-y-4">
       <div>
         <label for="employeeId" class="block text-sm sm:text-base font-medium text-gray-700">ID del Empleado</label>
-        <input type="text" id="employeeId" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md" placeholder="Ej. 12345" required>
+        <input type="text" id="employeeId" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Ej. 12345" required>
       </div>
       <div>
         <label for="action" class="block text-sm sm:text-base font-medium text-gray-700">Acción</label>
-        <select id="action" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md">
+        <select id="action" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
           <option value="Entrada">Entrada</option>
           <option value="Salida">Salida</option>
           <option value="Break">Break</option>
@@ -48,27 +62,31 @@
       </div>
       <div>
         <label for="project" class="block text-sm sm:text-base font-medium text-gray-700">Proyecto</label>
-        <select id="project" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md">
+        <select id="project" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
           <option value="Corte">Corte</option>
           <option value="Confección">Confección</option>
           <option value="Empaque">Empaque</option>
           <option value="Otros">Otros</option>
         </select>
       </div>
-      <button onclick="registerAttendance()" class="w-full bg-blue-500 text-white p-2 sm:p-3 rounded-md hover:bg-blue-600">Registrar</button>
+      <button onclick="registerAttendance()" class="w-full bg-green-500 text-white p-2 sm:p-3 rounded-md hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200">
+        <span id="registerButtonText">Registrar</span>
+        <div id="registerSpinner" class="hidden inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
+      </button>
     </div>
+    
     <div id="reportTab" class="hidden space-y-4">
       <div>
         <label for="week" class="block text-sm sm:text-base font-medium text-gray-700">Seleccionar Semana</label>
-        <input type="week" id="week" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md" required>
+        <input type="week" id="week" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
       </div>
       <div>
         <label for="filterEmployeeId" class="block text-sm sm:text-base font-medium text-gray-700">Filtrar por ID de Empleado (opcional)</label>
-        <input type="text" id="filterEmployeeId" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md" placeholder="Ej. 12345">
+        <input type="text" id="filterEmployeeId" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Ej. 12345">
       </div>
       <div>
         <label for="filterProject" class="block text-sm sm:text-base font-medium text-gray-700">Filtrar por Proyecto (opcional)</label>
-        <select id="filterProject" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md">
+        <select id="filterProject" class="mt-1 block w-full p-2 sm:p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
           <option value="">Todos</option>
           <option value="Corte">Corte</option>
           <option value="Confección">Confección</option>
@@ -76,16 +94,19 @@
           <option value="Otros">Otros</option>
         </select>
       </div>
-      <button onclick="generateReport()" class="w-full bg-green-500 text-white p-2 sm:p-3 rounded-md hover:bg-green-600">Generar Reporte</button>
-      <button onclick="exportReport()" class="w-full bg-purple-500 text-white p-2 sm:p-3 rounded-md hover:bg-purple-600">Exportar como CSV</button>
-      <div id="reportResult" class="mt-4">
+      <button onclick="generateReport()" class="w-full bg-purple-500 text-white p-2 sm:p-3 rounded-md hover:bg-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors duration-200">
+        <span id="reportButtonText">Generar Reporte</span>
+        <div id="reportSpinner" class="hidden inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
+      </button>
+      <button onclick="exportReport()" class="w-full bg-indigo-500 text-white p-2 sm:p-3 rounded-md hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200">Exportar como CSV</button>
+      <div id="reportResult" class="mt-4 hidden">
         <div class="hidden sm:block overflow-x-auto">
-          <table class="w-full text-sm text-left text-gray-700">
+          <table class="w-full text-sm text-left text-gray-700 border border-gray-200">
             <thead class="text-xs text-gray-700 uppercase bg-gray-50">
               <tr>
-                <th class="px-4 py-2">ID Empleado</th>
-                <th class="px-4 py-2">Horas Trabajadas</th>
-                <th class="px-4 py-2">Proyectos</th>
+                <th class="px-4 py-2 border-b">ID Empleado</th>
+                <th class="px-4 py-2 border-b">Horas Trabajadas</th>
+                <th class="px-4 py-2 border-b">Proyectos</th>
               </tr>
             </thead>
             <tbody id="reportTable"></tbody>
@@ -94,7 +115,8 @@
         <div id="reportCards" class="block sm:hidden space-y-4"></div>
       </div>
     </div>
-    <button onclick="logout()" class="w-full bg-red-500 text-white p-2 sm:p-3 rounded-md hover:bg-red-600 mt-4">Cerrar Sesión</button>
+    
+    <button onclick="logout()" class="w-full bg-red-500 text-white p-2 sm:p-3 rounded-md hover:bg-red-600 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 mt-4 transition-colors duration-200">Cerrar Sesión</button>
     <p id="message" class="mt-4 text-center text-sm sm:text-base text-gray-600"></p>
   </div>
 
@@ -102,99 +124,181 @@
     let isAuthenticated = false;
     let isAdmin = false;
     let currentReportData = [];
+    
+    // URL corregida del script de Google Apps Script
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycoymS9cFGGBAoRVuINCFGuyP_3KDKwx1-eSO_kSJTIEX-9xRYf1daBW6lumXzzKzd/exec';
 
     function showTab(tab) {
+      // Ocultar todas las pestañas
       document.getElementById('registerTab').classList.add('hidden');
       document.getElementById('reportTab').classList.add('hidden');
+      
+      // Mostrar la pestaña seleccionada
       document.getElementById(tab + 'Tab').classList.remove('hidden');
+      
+      // Actualizar estilos de botones
+      document.getElementById('registerTabBtn').classList.remove('bg-blue-500', 'text-white');
+      document.getElementById('registerTabBtn').classList.add('bg-gray-300', 'text-gray-700');
+      
+      if (document.getElementById('reportTabButton').classList.contains('hidden') === false) {
+        document.getElementById('reportTabButton').classList.remove('bg-blue-500', 'text-white');
+        document.getElementById('reportTabButton').classList.add('bg-gray-300', 'text-gray-700');
+      }
+      
+      if (tab === 'register') {
+        document.getElementById('registerTabBtn').classList.remove('bg-gray-300', 'text-gray-700');
+        document.getElementById('registerTabBtn').classList.add('bg-blue-500', 'text-white');
+      } else if (tab === 'report') {
+        document.getElementById('reportTabButton').classList.remove('bg-gray-300', 'text-gray-700');
+        document.getElementById('reportTabButton').classList.add('bg-blue-500', 'text-white');
+      }
+      
+      // Limpiar mensajes
       document.getElementById('message').textContent = '';
       document.getElementById('reportResult').classList.add('hidden');
     }
 
-      async function login() {
-      const username = document.getElementById('username').value;
+    function showSpinner(spinnerId, textId, originalText) {
+      document.getElementById(spinnerId).classList.remove('hidden');
+      document.getElementById(textId).textContent = 'Procesando...';
+    }
+
+    function hideSpinner(spinnerId, textId, originalText) {
+      document.getElementById(spinnerId).classList.add('hidden');
+      document.getElementById(textId).textContent = originalText;
+    }
+
+    async function makeRequest(data) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 segundos timeout
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        
+        if (error.name === 'AbortError') {
+          throw new Error('La solicitud tardó demasiado tiempo. Intente nuevamente.');
+        }
+        
+        throw error;
+      }
+    }
+
+    async function login() {
+      const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
       const loginMessage = document.getElementById('loginMessage');
-    
+
       if (!username || !password) {
         loginMessage.textContent = 'Por favor, ingrese usuario y contraseña.';
-        loginMessage.classList.add('text-red-500');
+        loginMessage.className = 'mt-4 text-center text-sm sm:text-base text-red-500';
         return;
       }
-    
+
+      showSpinner('loginSpinner', 'loginButtonText', 'Iniciar Sesión');
+      loginMessage.textContent = '';
+      loginMessage.className = 'mt-4 text-center text-sm sm:text-base text-gray-600';
+
       try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycoymS9cFGGBAoRVuINCFGuyP.3KDKwx1-eSO.kSJTIEX-9xRYf1daBW6lumXzzKzd/exec', {
-          method: 'POST',
-          body: JSON.stringify({ action: 'login', username, password }),
-          headers: { 'Content-Type': 'application/json' }
+        const result = await makeRequest({
+          action: 'login',
+          username: username,
+          password: password
         });
-    
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-    
-        const result = await response.json();
+
         if (result.status === 'success') {
           isAuthenticated = true;
           isAdmin = result.isAdmin;
           document.getElementById('loginSection').classList.add('hidden');
           document.getElementById('attendanceSection').classList.remove('hidden');
+          
           if (isAdmin) {
             document.getElementById('reportTabButton').classList.remove('hidden');
           }
+          
           showTab('register');
-          loginMessage.textContent = '';
+          
+          // Limpiar campos de login
+          document.getElementById('username').value = '';
+          document.getElementById('password').value = '';
         } else {
           loginMessage.textContent = result.message || 'Usuario o contraseña incorrectos.';
-          loginMessage.classList.add('text-red-500');
+          loginMessage.className = 'mt-4 text-center text-sm sm:text-base text-red-500';
         }
       } catch (error) {
-        loginMessage.textContent = `Error: ${error.message}. Verifique la conexión o el URL del script.`;
-        loginMessage.classList.add('text-red-500');
-        console.error('Fetch error:', error);
+        console.error('Error en login:', error);
+        loginMessage.textContent = `Error de conexión: ${error.message}`;
+        loginMessage.className = 'mt-4 text-center text-sm sm:text-base text-red-500';
+      } finally {
+        hideSpinner('loginSpinner', 'loginButtonText', 'Iniciar Sesión');
       }
     }
 
-    // Falta implementar registerAttendance, generateReport, exportReport y logout
-    // Añade estas funciones según sea necesario. Aquí un ejemplo básico:
-
     async function registerAttendance() {
-      const employeeId = document.getElementById('employeeId').value;
+      const employeeId = document.getElementById('employeeId').value.trim();
       const action = document.getElementById('action').value;
       const project = document.getElementById('project').value;
       const message = document.getElementById('message');
 
       if (!employeeId || !action || !project) {
         message.textContent = 'Por favor, complete todos los campos.';
-        message.classList.add('text-red-500');
+        message.className = 'mt-4 text-center text-sm sm:text-base text-red-500';
         return;
       }
 
+      showSpinner('registerSpinner', 'registerButtonText', 'Registrar');
+      message.textContent = '';
+      message.className = 'mt-4 text-center text-sm sm:text-base text-gray-600';
+
       try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycoymS9cFGGBAoRVuINCFGuyP.3KDKwx1-eSO.kSJTIEX-9xRYf1daBW6lumXzzKzd/exec', {
-          method: 'POST',
-          body: JSON.stringify({ action: 'register', employeeId, actionType: action, project, timestamp: new Date().toISOString() }),
-          headers: { 'Content-Type': 'application/json' }
+        const result = await makeRequest({
+          action: 'register',
+          employeeId: employeeId,
+          actionType: action,
+          project: project,
+          timestamp: new Date().toISOString()
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        if (result.status === 'success') {
+          message.textContent = result.message || 'Registro guardado correctamente.';
+          message.className = 'mt-4 text-center text-sm sm:text-base text-green-600';
+          
+          // Limpiar campo de empleado
+          document.getElementById('employeeId').value = '';
+        } else {
+          message.textContent = result.message || 'Error al registrar.';
+          message.className = 'mt-4 text-center text-sm sm:text-base text-red-500';
         }
-
-        const result = await response.json();
-        message.textContent = result.message || 'Registro guardado.';
-        message.classList.remove('text-red-500');
-        if (result.status === 'error') message.classList.add('text-red-500');
       } catch (error) {
-        message.textContent = `Error: ${error.message}. Verifique la conexión o el URL del script.`;
-        message.classList.add('text-red-500');
-        console.error('Fetch error:', error);
+        console.error('Error en registro:', error);
+        message.textContent = `Error de conexión: ${error.message}`;
+        message.className = 'mt-4 text-center text-sm sm:text-base text-red-500';
+      } finally {
+        hideSpinner('registerSpinner', 'registerButtonText', 'Registrar');
       }
     }
 
     async function generateReport() {
       const week = document.getElementById('week').value;
-      const filterEmployeeId = document.getElementById('filterEmployeeId').value;
+      const filterEmployeeId = document.getElementById('filterEmployeeId').value.trim();
       const filterProject = document.getElementById('filterProject').value;
       const message = document.getElementById('message');
       const reportTable = document.getElementById('reportTable');
@@ -202,85 +306,140 @@
 
       if (!week) {
         message.textContent = 'Por favor, seleccione una semana.';
-        message.classList.add('text-red-500');
+        message.className = 'mt-4 text-center text-sm sm:text-base text-red-500';
         return;
       }
 
+      showSpinner('reportSpinner', 'reportButtonText', 'Generar Reporte');
+      message.textContent = '';
+      message.className = 'mt-4 text-center text-sm sm:text-base text-gray-600';
+
       try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycoymS9cFGGBAoRVuINCFGuyP.3KDKwx1-eSO.kSJTIEX-9xRYf1daBW6lumXzzKzd/exec', {
-          method: 'POST',
-          body: JSON.stringify({ action: 'generateReport', week, filterEmployeeId, filterProject, isAdmin }),
-          headers: { 'Content-Type': 'application/json' }
+        const result = await makeRequest({
+          action: 'generateReport',
+          week: week,
+          filterEmployeeId: filterEmployeeId,
+          filterProject: filterProject,
+          isAdmin: isAdmin
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
         if (result.status === 'success') {
           currentReportData = result.data || [];
           reportTable.innerHTML = '';
           reportCards.innerHTML = '';
+          
           if (currentReportData.length === 0) {
             message.textContent = 'No hay datos para esta semana.';
-            message.classList.add('text-red-500');
+            message.className = 'mt-4 text-center text-sm sm:text-base text-yellow-600';
+            document.getElementById('reportResult').classList.add('hidden');
           } else {
             currentReportData.forEach(row => {
-              if (window.innerWidth >= 640) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td class="px-4 py-2">${row.employeeId}</td><td class="px-4 py-2">${row.hoursWorked.toFixed(2)}</td><td class="px-4 py-2">${row.projects.join(', ')}</td>`;
-                reportTable.appendChild(tr);
-              } else {
-                const card = document.createElement('div');
-                card.className = 'p-4 bg-gray-100 rounded-md';
-                card.innerHTML = `<p>ID: ${row.employeeId}</p><p>Horas: ${row.hoursWorked.toFixed(2)}</p><p>Proyectos: ${row.projects.join(', ')}</p>`;
-                reportCards.appendChild(card);
-              }
+              // Tabla para pantallas grandes
+              const tr = document.createElement('tr');
+              tr.className = 'border-b hover:bg-gray-50';
+              tr.innerHTML = `
+                <td class="px-4 py-2">${row.employeeId}</td>
+                <td class="px-4 py-2">${row.hoursWorked.toFixed(2)}</td>
+                <td class="px-4 py-2">${row.projects.join(', ')}</td>
+              `;
+              reportTable.appendChild(tr);
+
+              // Tarjetas para móviles
+              const card = document.createElement('div');
+              card.className = 'p-4 bg-gray-50 rounded-md border';
+              card.innerHTML = `
+                <p class="font-semibold">ID: ${row.employeeId}</p>
+                <p class="text-gray-600">Horas: ${row.hoursWorked.toFixed(2)}</p>
+                <p class="text-gray-600">Proyectos: ${row.projects.join(', ')}</p>
+              `;
+              reportCards.appendChild(card);
             });
+            
             document.getElementById('reportResult').classList.remove('hidden');
-            message.textContent = '';
+            message.textContent = `Se encontraron ${currentReportData.length} registros.`;
+            message.className = 'mt-4 text-center text-sm sm:text-base text-green-600';
           }
         } else {
           message.textContent = result.message || 'Error al generar el reporte.';
-          message.classList.add('text-red-500');
+          message.className = 'mt-4 text-center text-sm sm:text-base text-red-500';
         }
       } catch (error) {
-        message.textContent = `Error: ${error.message}. Verifique la conexión o el URL del script.`;
-        message.classList.add('text-red-500');
-        console.error('Fetch error:', error);
+        console.error('Error en reporte:', error);
+        message.textContent = `Error de conexión: ${error.message}`;
+        message.className = 'mt-4 text-center text-sm sm:text-base text-red-500';
+      } finally {
+        hideSpinner('reportSpinner', 'reportButtonText', 'Generar Reporte');
       }
     }
 
     function exportReport() {
       if (!currentReportData.length) {
-        document.getElementById('message').textContent = 'Genere un reporte primero.';
-        document.getElementById('message').classList.add('text-red-500');
+        const message = document.getElementById('message');
+        message.textContent = 'Genere un reporte primero.';
+        message.className = 'mt-4 text-center text-sm sm:text-base text-red-500';
         return;
       }
 
-      const csvContent = [
-        ['ID Empleado', 'Horas Trabajadas', 'Proyectos'],
-        ...currentReportData.map(row => [row.employeeId, row.hoursWorked.toFixed(2), row.projects.join(';')])
-      ].map(row => row.join(',')).join('\n');
+      try {
+        const csvContent = [
+          ['ID Empleado', 'Horas Trabajadas', 'Proyectos'],
+          ...currentReportData.map(row => [
+            row.employeeId,
+            row.hoursWorked.toFixed(2),
+            row.projects.join(';')
+          ])
+        ].map(row => row.join(',')).join('\n');
 
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `reporte_asistencia_${document.getElementById('week').value}.csv`;
-      link.click();
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `reporte_asistencia_${document.getElementById('week').value}.csv`;
+        link.click();
+        
+        const message = document.getElementById('message');
+        message.textContent = 'Reporte exportado exitosamente.';
+        message.className = 'mt-4 text-center text-sm sm:text-base text-green-600';
+      } catch (error) {
+        console.error('Error al exportar:', error);
+        const message = document.getElementById('message');
+        message.textContent = 'Error al exportar el reporte.';
+        message.className = 'mt-4 text-center text-sm sm:text-base text-red-500';
+      }
     }
 
     function logout() {
       isAuthenticated = false;
       isAdmin = false;
       currentReportData = [];
+      
       document.getElementById('attendanceSection').classList.add('hidden');
       document.getElementById('loginSection').classList.remove('hidden');
       document.getElementById('reportTabButton').classList.add('hidden');
       document.getElementById('message').textContent = '';
       document.getElementById('reportResult').classList.add('hidden');
+      document.getElementById('loginMessage').textContent = '';
+      document.getElementById('loginMessage').className = 'mt-4 text-center text-sm sm:text-base text-gray-600';
+      
+      // Limpiar formularios
+      document.getElementById('employeeId').value = '';
+      document.getElementById('week').value = '';
+      document.getElementById('filterEmployeeId').value = '';
+      document.getElementById('filterProject').value = '';
     }
+
+    // Permitir login con Enter
+    document.getElementById('password').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        login();
+      }
+    });
+
+    // Permitir registro con Enter
+    document.getElementById('employeeId').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        registerAttendance();
+      }
+    });
   </script>
 </body>
 </html>
