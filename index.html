@@ -112,165 +112,162 @@
     }
 
     async function login() {
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-      const loginMessage = document.getElementById('loginMessage');
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  const loginMessage = document.getElementById('loginMessage');
 
-      if (!username || !password) {
-        loginMessage.textContent = 'Por favor, ingrese usuario y contraseña.';
-        loginMessage.classList.add('text-red-500');
-        return;
-      }
+  if (!username || !password) {
+    loginMessage.textContent = 'Por favor, ingrese usuario y contraseña.';
+    loginMessage.classList.add('text-red-500');
+    return;
+  }
 
-      try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbx1rkSaiBy7wzqPaEn_VVuv8hvrGIYwdp2vdBee5Kb5R7gLY2IpQH6fTMWPW2nj5uTv/exec', {
-          method: 'POST',
-          body: JSON.stringify({ action: 'login', username, password }),
-          headers: { 'Content-Type': 'application/json' }
-        });
+  try {
+    const response = await fetch('https://script.google.com/macros/s/[YOUR_APPS_SCRIPT_ID]/exec', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'login', username, password }),
+      headers: { 'Content-Type': 'application/json' }
+    });
 
-        const result = await response.json();
-        if (result.status === 'success') {
-          isAuthenticated = true;
-          isAdmin = result.isAdmin;
-          document.getElementById('loginSection').classList.add('hidden');
-          document.getElementById('attendanceSection').classList.remove('hidden');
-          if (isAdmin) {
-            document.getElementById('reportTabButton').classList.remove('hidden');
-          }
-          showTab('register');
-          loginMessage.textContent = '';
-        } else {
-          loginMessage.textContent = result.message || 'Usuario o contraseña incorrectos.';
-          loginMessage.classList.add('text-red-500');
-        }
-      } catch (error) {
-        loginMessage.textContent = 'Error de conexión. Verifique su red.';
-        loginMessage.classList.add('text-red-500');
-      }
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    function logout() {
-      isAuthenticated = false;
-      isAdmin = false;
-      document.getElementById('attendanceSection').classList.add('hidden');
-      document.getElementById('loginSection').classList.remove('hidden');
-      document.getElementById('username').value = '';
-      document.getElementById('password').value = '';
-      document.getElementById('loginMessage').textContent = '';
-      document.getElementById('reportResult').classList.add('hidden');
-      document.getElementById('reportTabButton').classList.add('hidden');
+    const result = await response.json();
+    if (result.status === 'success') {
+      isAuthenticated = true;
+      isAdmin = result.isAdmin;
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('attendanceSection').classList.remove('hidden');
+      if (isAdmin) {
+        document.getElementById('reportTabButton').classList.remove('hidden');
+      }
+      showTab('register');
+      loginMessage.textContent = '';
+    } else {
+      loginMessage.textContent = result.message || 'Usuario o contraseña incorrectos.';
+      loginMessage.classList.add('text-red-500');
+    }
+  } catch (error) {
+    loginMessage.textContent = `Error: ${error.message}. Verifique la conexión o el URL del script.`;
+    loginMessage.classList.add('text-red-500');
+  }
+}
+
+async function registerAttendance() {
+  if (!isAuthenticated) {
+    document.getElementById('message').textContent = 'Por favor, inicie sesión primero.';
+    document.getElementById('message').classList.add('text-red-500');
+    return;
+  }
+
+  const employeeId = document.getElementById('employeeId').value;
+  const action = document.getElementById('action').value;
+  const project = document.getElementById('project').value;
+  const message = document.getElementById('message');
+
+  if (!employeeId) {
+    message.textContent = 'Por favor, ingrese un ID de empleado.';
+    message.classList.add('text-red-500');
+    return;
+  }
+
+  const timestamp = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+  const data = { action: 'register', employeeId, actionType: action, project, timestamp };
+
+  try {
+    const response = await fetch('https://script.google.com/macros/s/[YOUR_APPS_SCRIPT_ID]/exec', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    async function registerAttendance() {
-      if (!isAuthenticated) {
-        document.getElementById('message').textContent = 'Por favor, inicie sesión primero.';
-        document.getElementById('message').classList.add('text-red-500');
-        return;
-      }
+    const result = await response.json();
+    if (result.status === 'success') {
+      message.textContent = `Registro exitoso: ${action} en ${project} a las ${timestamp}`;
+      message.classList.remove('text-red-500');
+      message.classList.add('text-green-500');
+      document.getElementById('employeeId').value = '';
+    } else {
+      message.textContent = result.message || 'Error al registrar. Intente de nuevo.';
+      message.classList.add('text-red-500');
+    }
+  } catch (error) {
+    message.textContent = `Error: ${error.message}. Verifique la conexión o el URL del script.`;
+    message.classList.add('text-red-500');
+  }
+}
 
-      const employeeId = document.getElementById('employeeId').value;
-      const action = document.getElementById('action').value;
-      const project = document.getElementById('project').value;
-      const message = document.getElementById('message');
+async function generateReport() {
+  if (!isAuthenticated || !isAdmin) {
+    document.getElementById('message').textContent = 'Acceso denegado. Solo administradores pueden generar reportes.';
+    document.getElementById('message').classList.add('text-red-500');
+    return;
+  }
 
-      if (!employeeId) {
-        message.textContent = 'Por favor, ingrese un ID de empleado.';
-        message.classList.add('text-red-500');
-        return;
-      }
+  const week = document.getElementById('week').value;
+  const filterEmployeeId = document.getElementById('filterEmployeeId').value;
+  const filterProject = document.getElementById('filterProject').value;
+  const message = document.getElementById('message');
 
-      const timestamp = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
-      const data = { action: 'register', employeeId, actionType: action, project, timestamp };
+  if (!week) {
+    message.textContent = 'Por favor, seleccione una semana.';
+    message.classList.add('text-red-500');
+    return;
+  }
 
-      try {
-        const response = await fetch('https://script.google.com/macros/s/[YOUR_APPS_SCRIPT_ID]/exec', {
-          method: 'POST',
-          body: JSON.stringify(data),
-          headers: { 'Content-Type': 'application/json' }
-        });
+  try {
+    const response = await fetch('https://script.google.com/macros/s/[YOUR_APPS_SCRIPT_ID]/exec', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'generateReport', week, filterEmployeeId, filterProject, isAdmin }),
+      headers: { 'Content-Type': 'application/json' }
+    });
 
-        const result = await response.json();
-        if (result.status === 'success') {
-          message.textContent = `Registro exitoso: ${action} en ${project} a las ${timestamp}`;
-          message.classList.remove('text-red-500');
-          message.classList.add('text-green-500');
-          document.getElementById('employeeId').value = '';
-        } else {
-          message.textContent = result.message || 'Error al registrar. Intente de nuevo.';
-          message.classList.add('text-red-500');
-        }
-      } catch (error) {
-        message.textContent = 'Error de conexión. cerca su red.';
-        message.classList.add('text-red-500');
-      }
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    async function generateReport() {
-      if (!isAuthenticated || !isAdmin) {
-        document.getElementById('message').textContent = 'Acceso denegado. Solo administradores pueden generar reportes.';
-        document.getElementById('message').classList.add('text-red-500');
-        return;
-      }
-
-      const week = document.getElementById('week').value;
-      const filterEmployeeId = document.getElementById('filterEmployeeId').value;
-      const filterProject = document.getElementById('filterProject').value;
-      const message = document.getElementById('message');
-
-      if (!week) {
-        message.textContent = 'Por favor, seleccione una semana.';
-        message.classList.add('text-red-500');
-        return;
-      }
-
-      try {
-        const response = await fetch('https://script.google.com/macros/s/[YOUR_APPS_SCRIPT_ID]/exec', {
-          method: 'POST',
-          body: JSON.stringify({ action: 'generateReport', week, filterEmployeeId, filterProject, isAdmin }),
-          headers: { 'Content-Type': 'application/json' }
-        });
-
-        const result = await response.json();
-        if (result.status === 'success') {
-          currentReportData = result.data;
-          const reportTable = document.getElementById('reportTable');
-          const reportCards = document.getElementById('reportCards');
-          reportTable.innerHTML = '';
-          reportCards.innerHTML = '';
-          result.data.forEach(row => {
-            // Tabla para pantallas grandes
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td class="border px-4 py-2">${row.employeeId}</td>
-              <td class="border px-4 py-2">${row.hoursWorked.toFixed(2)}</td>
-              <td class="border px-4 py-2">${row.projects.join(', ')}</td>
-            `;
-            reportTable.appendChild(tr);
-            // Tarjetas para móviles
-            const card = document.createElement('div');
-            card.className = 'bg-gray-50 p-4 rounded-md shadow';
-            card.innerHTML = `
-              <p><strong>ID:</strong> ${row.employeeId}</p>
-              <p><strong>Horas:</strong> ${row.hoursWorked.toFixed(2)}</p>
-              <p><strong>Proyectos:</strong> ${row.projects.join(', ')}</p>
-            `;
-            reportCards.appendChild(card);
-          });
-          document.getElementById('reportResult').classList.remove('hidden');
-          message.textContent = 'Reporte generado exitosamente.';
-          message.classList.remove('text-red-500');
-          message.classList.add('text-green-500');
-        } else {
-          message.textContent = result.message || 'Error al generar el reporte.';
-          message.classList.add('text-red-500');
-        }
-      } catch (error) {
-        message.textContent = 'Error de conexión. Verifique su red.';
-        message.classList.add('text-red-500');
-      }
+    const result = await response.json();
+    if (result.status === 'success') {
+      currentReportData = result.data;
+      const reportTable = document.getElementById('reportTable');
+      const reportCards = document.getElementById('reportCards');
+      reportTable.innerHTML = '';
+      reportCards.innerHTML = '';
+      result.data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="border px-4 py-2">${row.employeeId}</td>
+          <td class="border px-4 py-2">${row.hoursWorked.toFixed(2)}</td>
+          <td class="border px-4 py-2">${row.projects.join(', ')}</td>
+        `;
+        reportTable.appendChild(tr);
+        const card = document.createElement('div');
+        card.className = 'bg-gray-50 p-4 rounded-md shadow';
+        card.innerHTML = `
+          <p><strong>ID:</strong> ${row.employeeId}</p>
+          <p><strong>Horas:</strong> ${row.hoursWorked.toFixed(2)}</p>
+          <p><strong>Proyectos:</strong> ${row.projects.join(', ')}</p>
+        `;
+        reportCards.appendChild(card);
+      });
+      document.getElementById('reportResult').classList.remove('hidden');
+      message.textContent = 'Reporte generado exitosamente.';
+      message.classList.remove('text-red-500');
+      message.classList.add('text-green-500');
+    } else {
+      message.textContent = result.message || 'Error al generar el reporte.';
+      message.classList.add('text-red-500');
     }
-
+  } catch (error) {
+    message.textContent = `Error: ${error.message}. Verifique la conexión o el URL del script.`;
+    message.classList.add('text-red-500');
+  }
+}
     function exportReport() {
       if (!currentReportData.length) {
         document.getElementById('message').textContent = 'Genere un reporte primero.';
