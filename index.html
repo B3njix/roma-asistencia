@@ -123,7 +123,7 @@
   }
 
   try {
-    const response = await fetch('https://script.google.com/macros/s/AKfycbyUtK-kJX8ioM5nF6K6W_Mhpon1jYo6VZ9RRkHQbCsAPjGGPSeBX3Ux_oudsTuA_Nc/exec', {
+    const response = await fetch('https://script.google.com/macros/s/AKfycbymS9cFGGBAoRVuiNCFGuyp_3KDKvxw1-eSO_kSJTlEX-9XRYfvlda3W6lumx3zzKzd/exec', {
       method: 'POST',
       body: JSON.stringify({ action: 'login', username, password }),
       headers: { 'Content-Type': 'application/json' }
@@ -176,7 +176,7 @@ async function registerAttendance() {
   const data = { action: 'register', employeeId, actionType: action, project, timestamp };
 
   try {
-    const response = await fetch('https://script.google.com/macros/s/AKfycbyUtK-kJX8ioM5nF6K6W_Mhpon1jYo6VZ9RRkHQbCsAPjGGPSeBX3Ux_oudsTuA_Nc/exec', {
+    const response = await fetch('https://script.google.com/macros/s/AKfycbymS9cFGGBAoRVuiNCFGuyp_3KDKvxw1-eSO_kSJTlEX-9XRYfvlda3W6lumx3zzKzd/exec', {
       method: 'POST',
       body: JSON.stringify(data),
       headers: { 'Content-Type': 'application/json' }
@@ -221,7 +221,7 @@ async function generateReport() {
   }
 
   try {
-    const response = await fetch('https://script.google.com/macros/s/AKfycbyUtK-kJX8ioM5nF6K6W_Mhpon1jYo6VZ9RRkHQbCsAPjGGPSeBX3Ux_oudsTuA_Nc/exec', {
+    const response = await fetch('https://script.google.com/macros/s/AKfycbymS9cFGGBAoRVuiNCFGuyp_3KDKvxw1-eSO_kSJTlEX-9XRYfvlda3W6lumx3zzKzd/exec', {
       method: 'POST',
       body: JSON.stringify({ action: 'generateReport', week, filterEmployeeId, filterProject, isAdmin }),
       headers: { 'Content-Type': 'application/json' }
