@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Control de Asistencia</title>
+  <script src="https://cdn.tailwindcss.com/3.3.5"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#667eea',
+            secondary: '#764ba2',
+            success: '#28a745',
+            danger: '#dc3545',
+            warning: '#ffc107',
+            info: '#17a2b8',
+            light: '#f8f9fa',
+            dark: '#343a40'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .tab-button.active { 
+      background-color: #667eea; 
+      color: white;
+    }
+    .stat-card {
+      transition: transform 0.3s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+    .btn {
+      transition: all 0.3s ease;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .type-entrada { 
+      background-color: #28a745; 
+      color: white; 
+      padding: 2px 8px;
+      border-radius: 15px;
+      font-size: 0.8em;
+    }
+    .type-salida { 
+      background-color: #dc3545; 
+      color: white; 
+      padding: 2px 8px;
+      border-radius: 15px;
+      font-size: 0.8em;
+    }
+    .employee-table tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+    .employee-table tr:hover {
+      background-color: #e9ecef;
+    }
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 300px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #projectChart {
+      width: 100% !important;
+      height: auto !important;
+      max-height: 400px;
+    }
+    @media (max-width: 768px) {
+      #projectChart {
+        max-height: 300px;
+      }
+    }
+    .employee-info-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .attendance-btn {
+      font-size: 1.2rem;
+      padding: 15px 25px;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .attendance-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+    }
+    .clock-display {
+      font-size: 3.5rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .employee-name {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    .employee-id {
+      background: rgba(255,255,255,0.2);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+    }
+    .last-record {
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Sección de Login -->
+    <div id="loginSection" class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-8">
+      <div class="text-center mb-6">
+        <div class="mx-auto mb-4 w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
+          <i class="fas fa-user-circle text-blue-500 text-4xl"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-800">Control de Asistencia</h1>
+        <p class="text-gray-600">Inicie sesión para continuar</p>
+      </div>
+      
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label for="username" class="block text-gray-700 mb-2">Usuario</label>
+          <input type="text" id="username" name="username" class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Ej. usuario1" required>
+        </div>
+        <div>
+          <label for="password" class="block text-gray-700 mb-2">Contraseña</label>
+          <input type="password" id="password" name="password" class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="••••••••" required>
+        </div>
+        <button type="submit" id="loginButton" class="w-full bg-primary text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">Iniciar Sesión</button>
+      </form>
+      <p id="loginMessage" class="mt-4 text-center text-sm"></p>
+    </div>
+
+    <!-- Sección de Asistencia para Empleados -->
+    <div id="attendanceSection" class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-8" style="display:none;">
+      <div class="text-center mb-6">
+        <div class="mx-auto mb-4 w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
+          <i class="fas fa-clock text-blue-500 text-4xl"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-800">Registro de Asistencia</h1>
+      </div>
+      
+      <!-- Información del empleado -->
+      <div class="employee-info-card mb-6">
+        <div class="employee-name" id="employeeName">Nombre</div>
+        <div class="employee-id" id="employeeId">ID: ---</div>
+        <div class="clock-display mt-4" id="currentTime">--:--:--</div>
+        <div class="last-record mt-3">
+          <div class="text-sm opacity-80">Último registro:</div>
+          <div class="text-sm" id="lastRecord">Ninguno</div>
+        </div>
+      </div>
+      
+      <!-- Formulario simplificado para empleados -->
+      <div class="grid grid-cols-1 gap-4 mb-4">
+        <button id="entradaBtn" class="attendance-btn bg-success text-white">
+          <i class="fas fa-sign-in-alt"></i> Registrar Entrada
+        </button>
+        <button id="salidaBtn" class="attendance-btn bg-danger text-white">
+          <i class="fas fa-sign-out-alt"></i> Registrar Salida
+        </button>
+      </div>
+      
+      <div class="mt-4">
+        <label for="project" class="block text-gray-700 mb-2">Proyecto</label>
+        <select id="project" name="project" class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary" required>
+          <option value="">Selecciona un proyecto</option>
+          <option value="corte">Corte</option>
+          <option value="costura">Costura</option>
+          <option value="acabado">Acabado</option>
+        </select>
+      </div>
+      
+      <div class="mt-4">
+        <label for="hourType" class="block text-gray-700 mb-2">Tipo de Hora</label>
+        <select id="hourType" name="hourType" class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="hora normal">Hora normal</option>
+          <option value="hora extra">Hora extra</option>
+          <option value="almuerzo">Almuerzo</option>
+        </select>
+      </div>
+      
+      <button onclick="logout()" class="w-full bg-gray-600 text-white py-2 rounded-lg hover:bg-gray-700 mt-6">
+        <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
+      </button>
+      
+      <p id="message" class="mt-4 text-center text-sm"></p>
+    </div>
+
+    <!-- Sección de Administrador -->
+    <div id="adminSection" class="bg-white rounded-xl shadow-md overflow-hidden p-6" style="display:none;">
+      <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">
+          <i class="fas fa-tachometer-alt mr-2 text-primary"></i>Panel de Administración
+        </h1>
+        <div class="flex items-center mt-4 md:mt-0">
+          <span id="adminName" class="mr-4 text-gray-700 font-medium"></span>
+          <button onclick="logout()" class="bg-danger text-white py-2 px-4 rounded-lg hover:bg-red-600">
+            <i class="fas fa-sign-out-alt mr-1"></i>Cerrar Sesión
+          </button>
+        </div>
+      </div>
+      
+      <!-- Navegación -->
+      <div class="flex flex-wrap border-b mb-6">
+        <button class="tab-button active px-4 py-2 mb-2 mr-2 rounded-t-lg" data-tab="dashboard">
+          <i class="fas fa-chart-bar mr-2"></i>Dashboard
+        </button>
+        <button class="tab-button px-4 py-2 mb-2 mr-2 rounded-t-lg" data-tab="employees">
+          <i class="fas fa-users mr-2"></i>Empleados
+        </button>
+        <button class="tab-button px-4 py-2 mb-2 mr-2 rounded-t-lg" data-tab="attendance">
+          <i class="fas fa-clipboard-list mr-2"></i>Asistencias
+        </button>
+        <button class="tab-button px-4 py-2 mb-2 mr-2 rounded-t-lg" data-tab="reports">
+          <i class="fas fa-file-alt mr-2"></i>Reportes
+        </button>
+        <button class="tab-button px-4 py-2 mb-2 rounded-t-lg" data-tab="settings">
+          <i class="fas fa-cog mr-2"></i>Configuración
+        </button>
+      </div>
+      
+      <!-- Contenido de pestañas -->
+      <div class="tab-content-container">
+        <!-- Dashboard -->
+        <div id="dashboardTab" class="tab-content active">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="stat-card bg-gradient-to-r from-primary to-secondary text-white rounded-lg p-6 shadow">
+              <div class="text-3xl font-bold" id="totalEmployees">0</div>
+              <div class="text-sm">Empleados</div>
+              <i class="fas fa-users text-xl absolute bottom-4 right-4 opacity-20"></i>
+            </div>
+            <div class="stat-card bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-6 shadow">
+              <div class="text-3xl font-bold" id="todayEntries">0</div>
+              <div class="text-sm">Entradas Hoy</div>
+              <i class="fas fa-sign-in-alt text-xl absolute bottom-4 right-4 opacity-20"></i>
+            </div>
+            <div class="stat-card bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg p-6 shadow">
+              <div class="text-3xl font-bold" id="todayExits">0</div>
+              <div class="text-sm">Salidas Hoy</div>
+              <i class="fas fa-sign-out-alt text-xl absolute bottom-4 right-4 opacity-20"></i>
+            </div>
+            <div class="stat-card bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg p-6 shadow">
+              <div class="text-3xl font-bold" id="activeEmployees">0</div>
+              <div class="text-sm">Activos</div>
+              <i class="fas fa-user-check text-xl absolute bottom-4 right-4 opacity-20"></i>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-lg shadow p-6">
+              <h2 class="text-xl font-bold mb-4 text-gray-800">
+                <i class="fas fa-history mr-2 text-primary"></i>Últimos Registros
+              </h2>
+              <div class="overflow-x-auto">
+                <table class="min-w-full">
+                  <thead>
+                    <tr class="bg-gray-100">
+                      <th class="py-2 px-4 text-left">Empleado</th>
+                      <th class="py-2 px-4 text-left">Acción</th>
+                      <th class="py-2 px-4 text-left">Hora</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recentRecords">
+                    <!-- Registros recientes se cargarán aquí -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+              <h2 class="text-xl font-bold mb-4 text-gray-800">
+                <i class="fas fa-chart-pie mr-2 text-primary"></i>Distribución por Proyecto
+              </h2>
+              <!-- Contenedor fijo para el gráfico -->
+              <div class="chart-container">
+                <div id="projectChart" class="h-full flex items-center justify-center">
+                  <div class="loader"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Gestión de Empleados -->
+        <div id="employeesTab" class="tab-content">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-800">
+              <i class="fas fa-users mr-2 text-primary"></i>Gestión de Empleados
+            </h2>
+            <button id="addEmployeeBtn" class="bg-primary text-white py-2 px-4 rounded-lg hover:bg-blue-700">
+              <i class="fas fa-plus mr-1"></i>Agregar Empleado
+            </button>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="min-w-full employee-table">
+                <thead>
+                  <tr class="bg-gray-100">
+                    <th class="py-3 px-4 text-left">ID</th>
+                    <th class="py-3 px-4 text-left">Nombre</th>
+                    <th class="py-3 px-4 text-left">Departamento</th>
+                    <th class="py-3 px-4 text-left">Puesto</th>
+                    <th class="py-3 px-4 text-left">Estado</th>
+                    <th class="py-3 px-4 text-left">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="employeesList">
+                  <!-- Lista de empleados se cargará aquí -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Registros de Asistencia -->
+        <div id="attendanceTab" class="tab-content">
+          <h2 class="text-xl font-bold mb-6 text-gray-800">
+            <i class="fas fa-clipboard-list mr-2 text-primary"></i>Registros de Asistencia
+          </h2>
+          
+          <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4">Filtros</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-gray-700 mb-2">Empleado</label>
+                <select id="filterEmployee" class="w-full border rounded-lg px-4 py-2">
+                  <option value="">Todos los empleados</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-gray-700 mb-2">Proyecto</label>
+                <select id="filterProject" class="w-full border rounded-lg px-4 py-2">
+                  <option value="">Todos los proyectos</option>
+                  <option value="corte">Corte</option>
+                  <option value="costura">Costura</option>
+                  <option value="acabado">Acabado</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-gray-700 mb-2">Tipo</label>
+                <select id="filterType" class="w-full border rounded-lg px-4 py-2">
+                  <option value="">Todos los tipos</option>
+                  <option value="entrada">Entrada</option>
+                  <option value="salida">Salida</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div>
+                <label class="block text-gray-700 mb-2">Fecha Inicio</label>
+                <input type="date" id="filterStartDate" class="w-full border rounded-lg px-4 py-2">
+              </div>
+              <div>
+                <label class="block text-gray-700 mb-2">Fecha Fin</label>
+                <input type="date" id="filterEndDate" class="w-full border rounded-lg px-4 py-2">
+              </div>
+              <div class="flex items-end">
+                <button id="applyFiltersBtn" class="bg-primary text-white py-2 px-4 rounded-lg hover:bg-blue-700 w-full">
+                  Aplicar Filtros
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="min-w-full">
+                <thead>
+                  <tr class="bg-gray-100">
+                    <th class="py-3 px-4 text-left">Fecha/Hora</th>
+                    <th class="py-3 px-4 text-left">Empleado</th>
+                    <th class="py-3 px-4 text-left">Proyecto</th>
+                    <th class="py-3 px-4 text-left">Tipo Hora</th>
+                    <th class="py-3 px-4 text-left">Tipo</th>
+                    <th class="py-3 px-4 text-left">Hora</th>
+                  </tr>
+                </thead>
+                <tbody id="attendanceRecords">
+                  <!-- Registros de asistencia se cargarán aquí -->
+                </tbody>
+              </table>
+            </div>
+            <div class="p-4 flex justify-between items-center">
+              <div id="recordsCount" class="text-gray-600">Mostrando 0 registros</div>
+              <div>
+                <button id="prevPageBtn" class="bg-gray-200 text-gray-700 py-1 px-3 rounded mr-2">
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+                <span id="currentPage">1</span> de <span id="totalPages">1</span>
+                <button id="nextPageBtn" class="bg-gray-200 text-gray-700 py-1 px-3 rounded ml-2">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Reportes -->
+        <div id="reportsTab" class="tab-content">
+          <h2 class="text-xl font-bold mb-6 text-gray-800">
+            <i class="fas fa-file-alt mr-2 text-primary"></i>Reportes
+          </h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+              <h3 class="text-lg font-semibold mb-4">Reporte General</h3>
+              <p class="text-gray-600 mb-4">Reporte resumido de todas las asistencias registradas.</p>
+              <button id="generateGeneralReport" class="bg-primary text-white py-2 px-4 rounded-lg hover:bg-blue-700">
+                <i class="fas fa-download mr-1"></i>Generar Reporte
+              </button>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow p-6">
+              <h3 class="text-lg font-semibold mb-4">Reporte por Empleado</h3>
+              <div class="mb-4">
+                <label class="block text-gray-700 mb-2">Seleccionar Empleado</label>
+                <select id="reportEmployee" class="w-full border rounded-lg px-4 py-2">
+                  <option value="">Seleccione un empleado</option>
+                </select>
+              </div>
+              <button id="generateEmployeeReport" class="bg-primary text-white py-2 px-4 rounded-lg hover:bg-blue-700">
+                <i class="fas fa-download mr-1"></i>Generar Reporte
+              </button>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4">Reporte de Horas Trabajadas</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-gray-700 mb-2">Periodo</label>
+                <select id="reportPeriod" class="w-full border rounded-lg px-4 py-2">
+                  <option value="semanal">Semanal</option>
+                  <option value="mensual">Mensual</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-gray-700 mb-2">Fecha Inicio</label>
+                <input type="date" id="reportStartDate" class="w-full border rounded-lg px-4 py-2">
+              </div>
+              <div>
+                <label class="block text-gray-700 mb-2">Fecha Fin</label>
+                <input type="date" id="reportEndDate" class="w-full border rounded-lg px-4 py-2">
+              </div>
+            </div>
+            <button id="generateTimeReport" class="bg-primary text-white py-2 px-4 rounded-lg hover:bg-blue-700 mt-4">
+              <i class="fas fa-calculator mr-1"></i>Generar Reporte
+            </button>
+            <div id="timeReportResult" class="mt-6">
+              <!-- Resultados del reporte de horas se mostrarán aquí -->
+            </div>
+          </div>
+        </div>
+        
+        <!-- Configuración -->
+        <div id="settingsTab" class="tab-content">
+          <h2 class="text-xl font-bold mb-6 text-gray-800">
+            <i class="fas fa-cog mr-2 text-primary"></i>Configuración del Sistema
+          </h2>
+          
+          <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4">Información de Conexión</h3>
+            <div class="mb-4">
+              <label class="block text-gray-700 mb-2">ID de la Hoja de Cálculo</label>
+              <input type="text" id="spreadsheetId" class="w-full border rounded-lg px-4 py-2" value="1FdunyeX_56sSUblUYA5IgaDMiamWDZSwwPKicHsOKLk" readonly>
+            </div>
+            <button id="testConnectionBtn" class="bg-primary text-white py-2 px-4 rounded-lg hover:bg-blue-700">
+              <i class="fas fa-plug mr-1"></i>Probar Conexión
+            </button>
+            <div id="connectionResult" class="mt-4 p-4 rounded hidden">
+              <!-- Resultado de prueba de conexión se mostrará aquí -->
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4">Exportar Datos</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button id="exportAttendanceBtn" class="bg-success text-white py-2 px-4 rounded-lg hover:bg-green-600">
+                <i class="fas fa-file-export mr-1"></i>Exportar Asistencias
+              </button>
+              <button id="exportEmployeesBtn" class="bg-success text-white py-2 px-4 rounded-lg hover:bg-green-600">
+                <i class="fas fa-file-export mr-1"></i>Exportar Empleados
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para gestión de empleados -->
+  <div id="employeeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold text-gray-800" id="modalTitle">Agregar Empleado</h3>
+        <button id="closeEmployeeModal" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <form id="employeeForm" class="space-y-4">
+        <input type="hidden" id="employeeFormId">
+        <div>
+          <label for="id" class="block text-gray-700 mb-2">ID</label>
+          <input type="text" id="id" name="id" class="w-full border rounded-lg px-4 py-2" required>
+        </div>
+        <div>
+          <label for="name" class="block text-gray-700 mb-2">Nombre Completo</label>
+          <input type="text" id="name" name="name" class="w-full border rounded-lg px-4 py-2" required>
+        </div>
+        <div>
+          <label for="department" class="block text-gray-700 mb-2">Departamento</label>
+          <input type="text" id="department" name="department" class="w-full border rounded-lg px-4 py-2">
+        </div>
+        <div>
+          <label for="position" class="block text-gray-700 mb-2">Puesto</label>
+          <input type="text" id="position" name="position" class="w-full border rounded-lg px-4 py-2">
+        </div>
+        <div>
+          <label for="status" class="block text-gray-700 mb-2">Estado</label>
+          <select id="status" name="status" class="w-full border rounded-lg px-4 py-2">
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+            <option value="Vacaciones">Vacaciones</option>
+            <option value="Licencia">Licencia</option>
+          </select>
+        </div>
+        <div class="flex justify-end space-x-3">
+          <button type="button" id="cancelEmployeeModal" class="bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400">Cancelar</button>
+          <button type="submit" class="bg-primary text-white py-2 px-4 rounded-lg hover:bg-blue-700">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para editar asistencia -->
+  <div id="attendanceModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold text-gray-800">Editar Registro de Asistencia</h3>
+        <button id="closeAttendanceModal" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <form id="attendanceEditForm" class="space-y-4">
+        <input type="hidden" id="attendanceRecordId">
+        <div>
+          <label for="editEmployeeId" class="block text-gray-700 mb-2">ID del Empleado</label>
+          <input type="text" id="editEmployeeId" class="w-full border rounded-lg px-4 py-2" readonly>
+        </div>
+        <div>
+          <label for="editType" class="block text-gray-700 mb-2">Acción</label>
+          <select id="editType" class="w-full border rounded-lg px-4 py-2">
+            <option value="entrada">Entrada</option>
+            <option value="salida">Salida</option>
+          </select>
+        </div>
+        <div>
+          <label for="editProject" class="block text-gray-700 mb-2">Proyecto</label>
+          <select id="editProject" class="w-full border rounded-lg px-4 py-2">
+            <option value="corte">Corte</option>
+            <option value="costura">Costura</option>
+            <option value="acabado">Acabado</option>
+          </select>
+        </div>
+        <div>
+          <label for="editHourType" class="block text-gray-700 mb-2">Tipo de Hora</label>
+          <select id="editHourType" class="w-full border rounded-lg px-4 py-2">
+            <option value="hora normal">Hora normal</option>
+            <option value="hora extra">Hora extra</option>
+            <option value="almuerzo">Almuerzo</option>
+          </select>
+        </div>
+        <div>
+          <label for="editTimestamp" class="block text-gray-700 mb-2">Fecha y Hora</label>
+          <input type="datetime-local" id="editTimestamp" class="w-full border rounded-lg px-4 py-2">
+        </div>
+        <div class="flex justify-end space-x-3">
+          <button type="button" id="cancelAttendanceEdit" class="bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400">Cancelar</button>
+          <button type="submit" class="bg-primary text-white py-2 px-4 rounded-lg hover:bg-blue-700">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Loader global y mensaje de error -->
+  <div id="globalLoader" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="loader"></div>
+  </div>
+  <div id="globalError" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg shadow-lg p-6 text-center">
+      <p class="text-red-500">Error al cargar la página. Por favor, verifica tu conexión e intenta de nuevo.</p>
+      <button onclick="location.reload()" class="mt-4 bg-primary text-white py-2 px-4 rounded-lg">Reintentar</button>
+    </div>
+  </div>
+
+  <script>
+    // URL de tu Google Apps Script
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdJhIvBki3As8cQ-POnatdVt6VTPQ4Ac-4UAARUVas6fsLWXDeyp2d3Yx08-5jN3Cj/exec';
+    let currentUser = null;
+    let currentPage = 1;
+    const recordsPerPage = 10;
+    let totalRecords = 0;
+    let allEmployees = [];
+
+    // Utilidad para enviar datos al backend
+    async function makeRequest(data) {
+      const formData = new URLSearchParams();
+      for (const key in data) {
+        if (data[key] !== undefined && data[key] !== null) {
+          formData.append(key, data[key]);
+        }
+      }
+      
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) throw new Error(`Error de red: ${response.status}`);
+        return await response.json();
+      } catch (error) {
+        console.error('Error en la solicitud:', error);
+        showMessage(`Error de conexión: ${error.message}`, 'error');
+        return { success: false, message: `Error de conexión: ${error.message}` };
+      }
+    }
+
+    // Mostrar secciones
+    function showLogin() {
+      document.getElementById('loginSection').style.display = 'block';
+      document.getElementById('attendanceSection').style.display = 'none';
+      document.getElementById('adminSection').style.display = 'none';
+      document.getElementById('globalLoader').classList.add('hidden');
+      document.getElementById('globalError').classList.add('hidden');
+      document.getElementById('loginMessage').textContent = '';
+      document.getElementById('message').textContent = '';
+      document.getElementById('loginForm').reset();
+      currentUser = null;
+    }
+
+    function showAttendance(user) {
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('attendanceSection').style.display = 'block';
+      document.getElementById('adminSection').style.display = 'none';
+      document.getElementById('message').textContent = '';
+      
+      // Prellenar información del empleado
+      document.getElementById('employeeName').textContent = user.name;
+      document.getElementById('employeeId').textContent = `ID: ${user.employeeId || 'N/A'}`;
+      currentUser = user;
+      
+      // Actualizar reloj en tiempo real
+      updateClock();
+      setInterval(updateClock, 1000);
+      
+      // Cargar último registro
+      loadLastAttendanceRecord(user.employeeId);
+      
+      // Seleccionar "hora normal" por defecto
+      document.getElementById('hourType').value = 'hora normal';
+    }
+
+    // ADMIN FUNCTIONS
+
+    function setupTabs() {
+      document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', function() {
+          // Quitar clase activa de todos los botones
+          document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active');
+          });
+          
+          // Agregar clase activa al botón clickeado
+          this.classList.add('active');
+          
+          // Ocultar todos los contenidos de pestañas
+          document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+          });
+          
+          // Mostrar el contenido de la pestaña seleccionada
+          const tabId = this.getAttribute('data-tab') + 'Tab';
+          document.getElementById(tabId).classList.add('active');
+        });
+      });
+    }
+
+    function setupEmployeeButton() {
+      document.getElementById('addEmployeeBtn').addEventListener('click', function() {
+        openEmployeeForm();
+      });
+    }
+
+    function setupModalClosers() {
+      // Modal de empleado
+      document.getElementById('closeEmployeeModal').addEventListener('click', closeEmployeeModal);
+      document.getElementById('cancelEmployeeModal').addEventListener('click', closeEmployeeModal);
+      
+      // Modal de asistencia
+      document.getElementById('closeAttendanceModal').addEventListener('click', closeAttendanceModal);
+      document.getElementById('cancelAttendanceEdit').addEventListener('click', closeAttendanceModal);
+    }
+
+    function closeAttendanceModal() {
+      document.getElementById('attendanceModal').classList.add('hidden');
+    }
+
+    async function openEmployeeForm(employeeId = null) {
+      const modal = document.getElementById('employeeModal');
+      modal.classList.remove('hidden');
+      
+      const title = document.getElementById('modalTitle');
+      const form = document.getElementById('employeeForm');
+      
+      if (employeeId) {
+        title.textContent = 'Editar Empleado';
+        
+        try {
+          const result = await makeRequest({
+            action: 'getEmployeeInfo',
+            employeeId: employeeId
+          });
+          
+          if (result.success) {
+            document.getElementById('employeeFormId').value = result.employee.id;
+            document.getElementById('id').value = result.employee.id;
+            document.getElementById('id').readOnly = true;
+            document.getElementById('name').value = result.employee.name;
+            document.getElementById('department').value = result.employee.department;
+            document.getElementById('position').value = result.employee.position;
+            document.getElementById('status').value = result.employee.status;
+          } else {
+            showMessage(result.message, 'error');
+          }
+        } catch (error) {
+          showMessage('Error: ' + error.message, 'error');
+        }
+      } else {
+        title.textContent = 'Agregar Empleado';
+        form.reset();
+        document.getElementById('employeeFormId').value = '';
+        document.getElementById('id').readOnly = false;
+      }
+    }
+
+    function closeEmployeeModal() {
+      const modal = document.getElementById('employeeModal');
+      modal.classList.add('hidden');
+      const form = document.getElementById('employeeForm');
+      form.reset();
+      document.getElementById('id').readOnly = false;
+    }
+
+    function showAdminPanel(user) {
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('attendanceSection').style.display = 'none';
+      document.getElementById('adminSection').style.display = 'block';
+      document.getElementById('adminName').textContent = user.name;
+      currentUser = user;
+      
+      // Configurar funcionalidades de la interfaz
+      setupTabs();
+      setupEmployeeButton();
+      setupModalClosers();
+      
+      // Cargar datos del dashboard
+      loadDashboardData();
+      loadEmployees();
+      loadEmployeeFilter();
+    }
+
+    // Actualizar reloj en tiempo real
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('currentTime').textContent = `${hours}:${minutes}:${seconds}`;
+    }
+
+    // Cargar último registro de asistencia
+    async function loadLastAttendanceRecord(employeeId) {
+      if (!employeeId) {
+        document.getElementById('lastRecord').textContent = 'Ningún registro disponible';
+        return;
+      }
+      
+      try {
+        const result = await makeRequest({
+          action: 'getLastAttendanceRecord',
+          employeeId: employeeId
+        });
+        
+        if (result.success && result.record) {
+          const record = result.record;
+          const date = new Date(record.timestamp);
+          const dateStr = date.toLocaleDateString('es-ES');
+          const timeStr = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+          
+          document.getElementById('lastRecord').innerHTML = `
+            <span class="${record.type === 'entrada' ? 'type-entrada' : 'type-salida'}">
+              ${record.type.toUpperCase()}
+            </span> 
+            el ${dateStr} a las ${timeStr} (${record.project})
+          `;
+        } else {
+          document.getElementById('lastRecord').textContent = 'Ningún registro encontrado';
+        }
+      } catch (error) {
+        console.error('Error cargando último registro:', error);
+        document.getElementById('lastRecord').textContent = 'Error al cargar';
+      }
+    }
+
+    // Login
+    document.getElementById('loginForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const loginMessage = document.getElementById('loginMessage');
+      loginMessage.textContent = '';
+      loginMessage.className = 'mt-4 text-center text-sm text-gray-600';
+
+      if (!username || !password) {
+        showMessage('Por favor, ingrese usuario y contraseña.', 'error', loginMessage);
+        return;
+      }
+
+      try {
+        const result = await makeRequest({
+          action: 'login',
+          username: username,
+          password: password
+        });
+
+        if (result.success) {
+          const user = result.user;
+          if (user.status !== 'Activo') {
+            showMessage('Usuario inactivo. Contacte al administrador.', 'error', loginMessage);
+            return;
+          }
+
+          if (user.role === 'admin') {
+            showAdminPanel(user);
+          } else if (user.role === 'employee') {
+            if (!user.employeeId) {
+              showMessage('Usuario empleado sin ID asociado.', 'error', loginMessage);
+              return;
+            }
+            showAttendance(user);
+          } else {
+            showMessage('Rol de usuario no válido.', 'error', loginMessage);
+          }
+        } else {
+          showMessage(result.message, 'error', loginMessage);
+        }
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error', loginMessage);
+      }
+    };
+
+    // Registrar asistencia (entrada/salida)
+    document.getElementById('entradaBtn').addEventListener('click', async function() {
+      registerAttendance('entrada');
+    });
+
+    document.getElementById('salidaBtn').addEventListener('click', async function() {
+      registerAttendance('salida');
+    });
+
+    async function registerAttendance(type) {
+      const message = document.getElementById('message');
+      const project = document.getElementById('project').value;
+      const hourType = document.getElementById('hourType').value;
+      
+      if (!project) {
+        showMessage('Por favor seleccione un proyecto', 'error', message);
+        return;
+      }
+      
+      if (!currentUser.employeeId) {
+        showMessage('No se puede registrar asistencia sin un ID de empleado', 'error', message);
+        return;
+      }
+      
+      try {
+        const data = {
+          action: 'registerAttendance',
+          employeeId: currentUser.employeeId,
+          type: type,
+          project: project,
+          hourType: hourType
+        };
+
+        const result = await makeRequest(data);
+        
+        if (result.success) {
+          showMessage(result.message, 'success', message);
+          // Actualizar último registro
+          loadLastAttendanceRecord(currentUser.employeeId);
+        } else {
+          showMessage(result.message, 'error', message);
+        }
+      } catch (err) {
+        showMessage('Error de conexión: ' + err.message, 'error', message);
+      }
+    }
+
+    // Logout
+    function logout() {
+      showLogin();
+    }
+
+    // Función para mostrar mensajes
+    function showMessage(text, type, element = null) {
+      const target = element || document.getElementById('message');
+      target.textContent = text;
+      target.className = 'mt-4 text-center text-sm ' + 
+        (type === 'success' ? 'text-green-600' : 
+         type === 'error' ? 'text-red-500' : 'text-gray-600');
+    }
+
+    // Cargar datos para el dashboard
+    async function loadDashboardData() {
+      try {
+        const employeesResult = await makeRequest({ action: 'getEmployeeList' });
+        if (employeesResult.success) {
+          document.getElementById('totalEmployees').textContent = employeesResult.total;
+          document.getElementById('activeEmployees').textContent = employeesResult.employees.filter(e => e.status === 'Activo').length;
+          allEmployees = employeesResult.employees;
+          
+          // Actualizar filtros de empleados
+          updateEmployeeFilters();
+        }
+        
+        const attendanceResult = await makeRequest({ 
+          action: 'getAttendanceRecords',
+          limit: 10
+        });
+        
+        if (attendanceResult.success) {
+          // Filtrar entradas/salidas de hoy
+          const today = new Date().toLocaleDateString('es-ES');
+          const todayEntries = attendanceResult.records.filter(r => 
+              r.type === 'entrada' && r.date === today
+          ).length;
+          
+          const todayExits = attendanceResult.records.filter(r => 
+              r.type === 'salida' && r.date === today
+          ).length;
+          
+          document.getElementById('todayEntries').textContent = todayEntries;
+          document.getElementById('todayExits').textContent = todayExits;
+          
+          // Mostrar registros recientes
+          const recentRecords = document.getElementById('recentRecords');
+          recentRecords.innerHTML = '';
+          
+          attendanceResult.records.slice(0, 5).forEach(record => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td class="py-2 px-4">${record.employeeName}</td>
+              <td class="py-2 px-4">
+                <span class="${record.type === 'entrada' ? 'type-entrada' : 'type-salida'}">
+                  ${record.type.toUpperCase()}
+                </span>
+              </td>
+              <td class="py-2 px-4">${record.time}</td>
+            `;
+            recentRecords.appendChild(row);
+          });
+        }
+        
+        // Cargar distribución por proyecto
+        const distributionResult = await makeRequest({ action: 'getProjectDistribution' });
+        if (distributionResult.success) {
+          renderProjectChart(distributionResult.distribution);
+        } else {
+          document.getElementById('projectChart').innerHTML = `
+            <p class="text-red-500 text-center">Error: ${distributionResult.message}</p>
+          `;
+        }
+      } catch (error) {
+        console.error('Error cargando datos del dashboard:', error);
+        document.getElementById('projectChart').innerHTML = `
+          <p class="text-red-500 text-center">Error al cargar los datos del dashboard</p>
+        `;
+      }
+    }
+
+    // Función para renderizar el gráfico de distribución por proyecto
+    function renderProjectChart(distributionData) {
+      const chartContainer = document.getElementById('projectChart');
+      
+      if (!distributionData || distributionData.length === 0) {
+        chartContainer.innerHTML = `
+          <div class="h-full flex items-center justify-center">
+            <p class="text-gray-500">No hay datos disponibles</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Crear canvas para el gráfico con tamaño fijo
+      chartContainer.innerHTML = '<canvas id="projectDistributionChart"></canvas>';
+      const ctx = document.getElementById('projectDistributionChart').getContext('2d');
+      
+      // Preparar datos para el gráfico
+      const labels = distributionData.map(item => item.project);
+      const data = distributionData.map(item => item.count);
+      const backgroundColors = [
+        '#667eea', '#28a745', '#dc3545', '#ffc107', '#17a2b8', 
+        '#764ba2', '#6c757d', '#20c997', '#fd7e14', '#e83e8c'
+      ];
+      
+      // Crear gráfico de pastel con opciones corregidas
+      new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: backgroundColors,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                font: {
+                  size: 12
+                },
+                padding: 15
+              }
+            },
+            title: {
+              display: true,
+              text: 'Distribución por Proyecto',
+              font: {
+                size: 16
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.raw || 0;
+                  const total = context.chart.getDatasetMeta(0).total;
+                  const percentage = Math.round((value / total) * 100);
+                  return `${label}: ${value} (${percentage}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Cargar lista de empleados
+    async function loadEmployees() {
+      const employeesList = document.getElementById('employeesList');
+      employeesList.innerHTML = '<tr><td colspan="6" class="py-8 text-center"><div class="loader"></div></td></tr>';
+      
+      try {
+        const result = await makeRequest({ action: 'getEmployeeList' });
+        
+        if (result.success) {
+          employeesList.innerHTML = '';
+          
+          if (result.employees.length === 0) {
+            employeesList.innerHTML = `
+              <tr>
+                <td colspan="6" class="py-8 text-center text-gray-500">
+                  No se encontraron empleados registrados
+                </td>
+              </tr>
+            `;
+            return;
+          }
+          
+          result.employees.forEach(employee => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td class="py-3 px-4 border-b">${employee.id}</td>
+              <td class="py-3 px-4 border-b">${employee.name}</td>
+              <td class="py-3 px-4 border-b">${employee.department}</td>
+              <td class="py-3 px-4 border-b">${employee.position}</td>
+              <td class="py-3 px-4 border-b">
+                <span class="${employee.status === 'Activo' ? 'text-green-600' : 'text-red-600'}">
+                  ${employee.status}
+                </span>
+              </td>
+              <td class="py-3 px-4 border-b">
+                <button class="edit-employee text-blue-500 hover:text-blue-700 mr-2" data-id="${employee.id}">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="delete-employee text-red-500 hover:text-red-700" data-id="${employee.id}">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </td>
+            `;
+            employeesList.appendChild(row);
+          });
+          
+          // Agregar listeners a los botones
+          document.querySelectorAll('.edit-employee').forEach(button => {
+            button.addEventListener('click', function() {
+              const employeeId = this.getAttribute('data-id');
+              openEmployeeForm(employeeId);
+            });
+          });
+          
+          document.querySelectorAll('.delete-employee').forEach(button => {
+            button.addEventListener('click', function() {
+              const employeeId = this.getAttribute('data-id');
+              deleteEmployee(employeeId);
+            });
+          });
+        } else {
+          employeesList.innerHTML = `
+            <tr>
+              <td colspan="6" class="py-8 text-center text-red-500">
+                Error: ${result.message}
+              </td>
+            </tr>
+          `;
+        }
+      } catch (error) {
+        employeesList.innerHTML = `
+          <tr>
+            <td colspan="6" class="py-8 text-center text-red-500">
+              Error: ${error.message}
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Guardar empleado
+    document.getElementById('employeeForm').onsubmit = async function(e) {
+      e.preventDefault();
+      
+      const employeeId = document.getElementById('employeeFormId').value;
+      const id = document.getElementById('id').value;
+      const name = document.getElementById('name').value;
+      const department = document.getElementById('department').value;
+      const position = document.getElementById('position').value;
+      const status = document.getElementById('status').value;
+      
+      const action = employeeId ? 'updateEmployee' : 'addEmployee';
+      
+      try {
+        const result = await makeRequest({
+          action: action,
+          id: id,
+          name: name,
+          department: department,
+          position: position,
+          status: status
+        });
+        
+        if (result.success) {
+          closeEmployeeModal();
+          loadEmployees();
+          showMessage(result.message, 'success');
+        } else {
+          showMessage(result.message, 'error');
+        }
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    };
+
+    // Eliminar empleado
+    async function deleteEmployee(employeeId) {
+      if (!confirm('¿Está seguro que desea eliminar este empleado?')) return;
+      
+      try {
+        const result = await makeRequest({
+          action: 'deleteEmployee',
+          employeeId: employeeId
+        });
+        
+        if (result.success) {
+          loadEmployees();
+          showMessage(result.message, 'success');
+        } else {
+          showMessage(result.message, 'error');
+        }
+      } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+      }
+    }
+
+    // Cargar filtros de empleados
+    async function loadEmployeeFilter() {
+      const filterEmployee = document.getElementById('filterEmployee');
+      const reportEmployee = document.getElementById('reportEmployee');
+      
+      try {
+        const result = await makeRequest({ action: 'getEmployeeList' });
+        
+        if (result.success) {
+          // Limpiar selects
+          filterEmployee.innerHTML = '<option value="">Todos los empleados</option>';
+          reportEmployee.innerHTML = '<option value="">Seleccione un empleado</option>';
+          
+          result.employees.forEach(employee => {
+            const option1 = document.createElement('option');
+            option1.value = employee.id;
+            option1.textContent = `${employee.id} - ${employee.name}`;
+            filterEmployee.appendChild(option1);
+            
+            const option2 = document.createElement('option');
+            option2.value = employee.id;
+            option2.textContent = `${employee.id} - ${employee.name}`;
+            reportEmployee.appendChild(option2);
+          });
+        }
+      } catch (error) {
+        console.error('Error cargando empleados para filtros:', error);
+      }
+    }
+
+    // Actualizar filtros de empleados
+    function updateEmployeeFilters() {
+      const filterEmployee = document.getElementById('filterEmployee');
+      const reportEmployee = document.getElementById('reportEmployee');
+      
+      // Limpiar selects
+      filterEmployee.innerHTML = '<option value="">Todos los empleados</option>';
+      reportEmployee.innerHTML = '<option value="">Seleccione un empleado</option>';
+      
+      allEmployees.forEach(employee => {
+        const option1 = document.createElement('option');
+        option1.value = employee.id;
+        option1.textContent = `${employee.id} - ${employee.name}`;
+        filterEmployee.appendChild(option1);
+        
+        const option2 = document.createElement('option');
+        option2.value = employee.id;
+        option2.textContent = `${employee.id} - ${employee.name}`;
+        reportEmployee.appendChild(option2);
+      });
+    }
+
+    // Cargar registros de asistencia con paginación
+    async function loadAttendanceRecords(page = 1) {
+      const recordsTable = document.getElementById('attendanceRecords');
+      recordsTable.innerHTML = '<tr><td colspan="6" class="py-8 text-center"><div class="loader"></div></td></tr>';
+      
+      currentPage = page;
+      
+      const employeeId = document.getElementById('filterEmployee').value;
+      const project = document.getElementById('filterProject').value;
+      const type = document.getElementById('filterType').value;
+      const startDate = document.getElementById('filterStartDate').value;
+      const endDate = document.getElementById('filterEndDate').value;
+      
+      try {
+        const result = await makeRequest({
+          action: 'getAttendanceRecords',
+          employeeId: employeeId,
+          project: project,
+          type: type,
+          startDate: startDate,
+          endDate: endDate,
+          page: page,
+          limit: recordsPerPage
+        });
+        
+        if (result.success) {
+          recordsTable.innerHTML = '';
+          totalRecords = result.total;
+          const totalPages = Math.ceil(totalRecords / recordsPerPage);
+          
+          document.getElementById('recordsCount').textContent = `Mostrando ${result.records.length} de ${totalRecords} registros`;
+          document.getElementById('currentPage').textContent = page;
+          document.getElementById('totalPages').textContent = totalPages;
+          
+          // Habilitar/deshabilitar botones de paginación
+          document.getElementById('prevPageBtn').disabled = page <= 1;
+          document.getElementById('nextPageBtn').disabled = page >= totalPages;
+          
+          if (result.records.length === 0) {
+            recordsTable.innerHTML = `
+              <tr>
+                <td colspan="6" class="py-8 text-center text-gray-500">
+                  No se encontraron registros de asistencia
+                </td>
+              </tr>
+            `;
+            return;
+          }
+          
+          result.records.forEach(record => {
+            const date = new Date(record.timestamp);
+            const row = document.createElement('tr');
+            row.classList.add('border-b');
+            row.innerHTML = `
+              <td class="py-3 px-4">${date.toLocaleString('es-ES')}</td>
+              <td class="py-3 px-4">${record.employeeName}</td>
+              <td class="py-3 px-4">${record.project}</td>
+              <td class="py-3 px-4">${record.hourType}</td>
+              <td class="py-3 px-4">
+                <span class="${record.type === 'entrada' ? 'type-entrada' : 'type-salida'}">
+                  ${record.type.toUpperCase()}
+                </span>
+              </td>
+              <td class="py-3 px-4">${record.time}</td>
+            `;
+            recordsTable.appendChild(row);
+          });
+        } else {
+          recordsTable.innerHTML = `
+            <tr>
+              <td colspan="6" class="py-8 text-center text-red-500">
+                Error: ${result.message}
+              </td>
+            </tr>
+          `;
+        }
+      } catch (error) {
+        recordsTable.innerHTML = `
+          <tr>
+            <td colspan="6" class="py-8 text-center text-red-500">
+              Error: ${error.message}
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Generar reporte general
+    document.getElementById('generateGeneralReport').addEventListener('click', async function() {
+      try {
+        // Generar URL para reporte general
+        const reportUrl = SCRIPT_URL + '?action=getGeneralReport';
+        window.open(reportUrl, '_blank');
+      } catch (error) {
+        showMessage('Error al generar el reporte: ' + error.message, 'error');
+      }
+    });
+
+    document.getElementById('generateEmployeeReport').addEventListener('click', async function() {
+      const employeeId = document.getElementById('reportEmployee').value;
+      
+      if (!employeeId) {
+        showMessage('Por favor seleccione un empleado', 'error');
+        return;
+      }
+      
+      try {
+        // Generar URL para reporte de empleado
+        const reportUrl = SCRIPT_URL + `?action=getEmployeeReport&employeeId=${employeeId}`;
+        window.open(reportUrl, '_blank');
+      } catch (error) {
+        showMessage('Error al generar el reporte: ' + error.message, 'error');
+      }
+    });
+
+    document.getElementById('generateTimeReport').addEventListener('click', async function() {
+      const period = document.getElementById('reportPeriod').value;
+      const startDate = document.getElementById('reportStartDate').value;
+      const endDate = document.getElementById('reportEndDate').value;
+      const resultDiv = document.getElementById('timeReportResult');
+      
+      if (!startDate || !endDate) {
+        showMessage('Por favor ingrese fechas de inicio y fin', 'error');
+        return;
+      }
+      
+      resultDiv.innerHTML = '<div class="text-center py-8"><div class="loader"></div></div>';
+      
+      try {
+        const result = await makeRequest({
+          action: 'generateTimeReport',
+          period: period,
+          startDate: startDate,
+          endDate: endDate
+        });
+        
+        if (result.success) {
+          let reportHTML = `
+            <h4 class="text-lg font-semibold mb-4">Reporte de Horas Trabajadas</h4>
+            <div class="mb-4">
+              <p><strong>Periodo:</strong> ${period === 'semanal' ? 'Semanal' : 'Mensual'}</p>
+              <p><strong>Desde:</strong> ${startDate} <strong>Hasta:</strong> ${endDate}</p>
+              <p><strong>Total de horas trabajadas:</strong> ${result.globalTotal.toFixed(2)} horas</p>
+            </div>
+            <h5 class="font-semibold mb-2">Detalle por Empleado:</h5>
+          `;
+          
+          for (const employeeId in result.individualReport) {
+            const employee = allEmployees.find(e => e.id === employeeId) || { name: 'Empleado desconocido' };
+            reportHTML += `
+              <div class="mb-4 p-3 bg-gray-50 rounded">
+                <p><strong>${employee.name} (ID: ${employeeId})</strong></p>
+                <div class="ml-4 mt-2">
+            `;
+            
+            for (const periodKey in result.individualReport[employeeId]) {
+              reportHTML += `<p class="mt-1"><strong>${period === 'semanal' ? 'Semana' : 'Mes'} ${periodKey}:</strong></p>`;
+              
+              for (const project in result.individualReport[employeeId][periodKey]) {
+                const hours = result.individualReport[employeeId][periodKey][project];
+                reportHTML += `<p class="ml-4">${project}: ${hours.toFixed(2)} horas</p>`;
+              }
+            }
+            
+            reportHTML += `</div></div>`;
+          }
+          
+          resultDiv.innerHTML = reportHTML;
+        } else {
+          resultDiv.innerHTML = `<p class="text-red-500">${result.message}</p>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<p class="text-red-500">Error: ${error.message}</p>`;
+      }
+    });
+
+    // Probar conexión
+    document.getElementById('testConnectionBtn').addEventListener('click', async function() {
+      const resultDiv = document.getElementById('connectionResult');
+      resultDiv.classList.remove('hidden');
+      resultDiv.innerHTML = '<div class="text-center py-4"><div class="loader"></div></div>';
+      
+      try {
+        const result = await makeRequest({ action: 'testConnection' });
+        
+        if (result.success) {
+          resultDiv.innerHTML = `
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+              <p><strong>✅ Conexión exitosa</strong></p>
+              <p>${result.message}</p>
+              <p><strong>ID de la hoja:</strong> ${result.spreadsheetId}</p>
+              <p><strong>Hojas disponibles:</strong> ${result.sheets.join(', ')}</p>
+            </div>
+          `;
+        } else {
+          resultDiv.innerHTML = `
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+              <p><strong>❌ Error de conexión</strong></p>
+              <p>${result.message}</p>
+              ${result.error ? `<p>Error: ${result.error}</p>` : ''}
+            </div>
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <p><strong>❌ Error de conexión</strong></p>
+            <p>${error.message}</p>
+          </div>
+        `;
+      }
+    });
+
+    // Exportar datos
+    document.getElementById('exportAttendanceBtn').addEventListener('click', function() {
+      const exportUrl = SCRIPT_URL + '?action=exportData&type=attendance&format=csv';
+      window.open(exportUrl, '_blank');
+    });
+
+    document.getElementById('exportEmployeesBtn').addEventListener('click', function() {
+      const exportUrl = SCRIPT_URL + '?action=exportData&type=employees&format=csv';
+      window.open(exportUrl, '_blank');
+    });
+
+    // Aplicar filtros de asistencia
+    document.getElementById('applyFiltersBtn').addEventListener('click', function() {
+      loadAttendanceRecords(1);
+    });
+
+    // Paginación
+    document.getElementById('prevPageBtn').addEventListener('click', function() {
+      if (currentPage > 1) {
+        loadAttendanceRecords(currentPage - 1);
+      }
+    });
+
+    document.getElementById('nextPageBtn').addEventListener('click', function() {
+      const totalPages = Math.ceil(totalRecords / recordsPerPage);
+      if (currentPage < totalPages) {
+        loadAttendanceRecords(currentPage + 1);
+      }
+    });
+
+    // Configuración inicial
+    window.onload = function() {
+      try {
+        showLogin();
+      } catch (error) {
+        console.error('Error inicializando la página:', error);
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('globalError').classList.remove('hidden');
+      }
+    };
+  </script>
+</body>
+</html>
